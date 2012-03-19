@@ -1,0 +1,6 @@
+pure.o: pure.h pureargs.h purelambda.h pureexpr.h pureapply.h
+pureapply.o: pureapply.h
+pureargs.o: pureargs.h
+pureexpr.o: pureexpr.h pureargs.h
+purelambda.o: purelambda.h pureargs.h pureexpr.h pureapply.h
+test.o: test.cpp pure.h pureargs.h purelambda.h pureexpr.h pureapply.h
