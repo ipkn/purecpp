@@ -1,7 +1,15 @@
+SRCS = test.cpp
+OBJS = $(SRCS:.cpp=.o)
+CPP = g++-mp-4.6
+CPPFLAGS = -std=c++0x -g
+
 all: test
-test: test.cpp
-	g++ -o test -std=c++0x test.cpp
+test: $(OBJS)
+	$(CPP) -o test $(CPPFLAGS) $(OBJS)
 depends:
-	g++ -MM *.h* *.cpp > depend
+	$(CPP) -MM *.h* *.cpp > depend
+
+.cpp.o:
+	$(CPP) -c $(CPPFLAGS) $<
 
 include depend
