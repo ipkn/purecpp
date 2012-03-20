@@ -2,6 +2,7 @@
 
 #include <tuple>
 #include "pureargs.h"
+#include "purempl.h"
 
 namespace pure
 {
@@ -36,21 +37,13 @@ namespace pure
 	template <typename T> 
 	struct PromoteToExpression
 	{
-		//BOOST_STATIC_ASSERT(std::is_base_of<Expression, T>::value);
-		static_assert(std::is_base_of<Expression, T>::value, "T is not Expression");
-		typedef T type;
+		typedef typename mpl::if_<std::is_base_of<Expression, T>, T, ConstExpression<T>>::type type;
 	};
 
 	template <int N>
 	struct PromoteToExpression<Arg<N>>
 	{
 		typedef VarExpression<N> type;
-	};
-
-	template <>
-	struct PromoteToExpression<int>
-	{
-		typedef ConstExpression<int> type;
 	};
 
 #define PURE_PROMOTE(T) typename PromoteToExpression<T>::type

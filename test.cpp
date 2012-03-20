@@ -1,4 +1,5 @@
 
+#include <string>
 #include <typeinfo>
 #include <iostream>
 #include "pure.h"
@@ -15,6 +16,7 @@ int main()
 {
 	auto f = lambda(x, y, x+y);
 	cout << f(40, 2) << endl;
+	cout << f(string("abc"), string("def")) + "ghi"<< endl;
 	g(f);
 	return 0;
 }
