@@ -6,6 +6,26 @@
 
 namespace pure
 {
+#ifndef PURE_NO_VARIADIC_TEMPLATE
+	template <typename Expr, int ...Args>
+	struct Lambda
+	{
+		typedef Expr expr_type;
+
+		Lambda(Expr e)
+		: e(e)
+		{
+		}
+
+		Expr e;
+
+		template <typename ... CallArgs>
+		auto operator()(CallArgs... cargs) -> decltype(apply(e, cargs...))
+		{
+			return apply(e, cargs...);
+		}
+	};
+#endif
 	template <typename Expr>
 	struct Lambda1
 	{
@@ -44,6 +64,7 @@ namespace pure
 		}
 	};
 
+#ifdef PURE_NO_VARIADIC_TEMPLATE
 	template <int N, typename Expr>
 	Lambda1<Expr> lambda(Arg<N>, Expr e)
 	{
@@ -55,4 +76,17 @@ namespace pure
 	{
 		return Lambda2<Expr>(e);
 	}
+#else
+	template <int N, typename Expr>
+	Lambda<Expr,N> lambda(Arg<N>, Expr e)
+	{
+		return Lambda<Expr,N>(e);
+	}
+
+	template <int N, int M, typename Expr>
+	Lambda<Expr,N,M> lambda(Arg<N>, Arg<M>, Expr e)
+	{
+		return Lambda<Expr,N,M>(e);
+	}
+#endif
 }
