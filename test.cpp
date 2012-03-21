@@ -6,6 +6,24 @@
 using namespace std;
 using namespace pure;
 
+struct TestCase
+{
+	void assert();
+};
+
+#define TEST(x) \
+	struct S__##x : public TestCase \
+	{ \
+		S__##x(); \
+	} inst_S__##x; \
+	S__##x::S__##x()
+
+TEST(first)
+{
+	cout << "TEST" << endl;
+}
+	
+
 template <typename F>
 void g(F f )
 {
