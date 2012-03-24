@@ -1,6 +1,13 @@
-pure.o: pure.h pureargs.h purelambda.h pureexpr.h pureapply.h
-pureapply.o: pureapply.h
+pure.o: pure.h purempl.h pureargs.h pureexpr.h purelambda.h pureapply.h
+pureapply.o: pureapply.h pureexpr.h pureargs.h purempl.h pure.h \
+ purelambda.h
 pureargs.o: pureargs.h
-pureexpr.o: pureexpr.h pureargs.h
-purelambda.o: purelambda.h pureargs.h pureexpr.h pureapply.h
-test.o: test.cpp pure.h pureargs.h purelambda.h pureexpr.h pureapply.h
+pureexpr.o: pureexpr.h pureargs.h purempl.h pure.h purelambda.h \
+ pureapply.h
+purelambda.o: purelambda.h pureargs.h pureexpr.h purempl.h pure.h \
+ pureapply.h
+purempl.o: purempl.h pure.h pureargs.h pureexpr.h purelambda.h \
+ pureapply.h
+testhelper.o: testhelper.h
+test.o: test.cpp pure.h purempl.h pureargs.h pureexpr.h purelambda.h \
+ pureapply.h testhelper.h
