@@ -78,6 +78,12 @@ namespace pure
 		return Lambda2<Expr>(e);
 	}
 #else
+	template <typename Expr>
+	Lambda<Expr> lambda(Expr e)
+	{
+		return Lambda<Expr>(e);
+	}
+
 	template <int N, typename Expr>
 	Lambda<Expr,N> lambda(Arg<N>, Expr e)
 	{

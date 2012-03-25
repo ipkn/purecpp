@@ -10,6 +10,13 @@ namespace pure
 	{
 	};
 
+	template <typename F, typename Args>
+	struct result_type
+	{
+		//typedef void type;
+	};
+
+
 	template <int N>
 	struct VarExpression : public Expression
 	{
@@ -24,6 +31,36 @@ namespace pure
 		T t;
 		ConstExpression(T t) : t(t) {}
 	};
+
+#define BINARY_OPERATOR(op, className) \
+	template <typename L, typename R>\
+	struct className : public Expression\
+	{\
+		L l;\
+		R r;\
+		className(L l, R r):l(l),r(r){}\
+	};\
+	template <typename L, typename R>\
+	className<\
+	PURE_PROMOTE(L),\
+	PURE_PROMOTE(R)\
+	> operator op(L l, R r)\
+	{\
+		typedef PURE_PROMOTE(L) LE;\
+		typedef PURE_PROMOTE(R) RE;\
+		return className<LE, RE>(LE(l), RE(r));\
+	}\
+	template <typename L, typename R, typename Args>\
+	struct result_type<className<L, R>, Args>\
+	{\
+		typedef decltype(typename result_type<L, Args>::type() op typename result_type<R, Args>::type()) type;\
+	};\
+	template <typename L, typename R, typename Arg>\
+	auto eval(className<L, R> e, Arg arg)\
+		-> decltype(eval(e.l, arg) op eval(e.r, arg))\
+	{\
+		return eval(e.l, arg) op eval(e.r, arg);\
+	}
 
 	template <typename L, typename R>
 	struct AddExpression : public Expression
@@ -74,12 +111,6 @@ namespace pure
 		typedef PURE_PROMOTE(R) RE;
 		return AddExpression<LE, RE>(LE(l), RE(r));
 	}
-
-	template <typename F, typename Args>
-	struct result_type
-	{
-		//typedef void type;
-	};
 
 	template <typename Expr, typename Args, int... NArgs>
 	struct result_type<Lambda<Expr, NArgs...>, Args>
@@ -158,7 +189,7 @@ namespace pure
 
 	template <typename Arg, typename F, int ... NArgs>
 	auto eval(Lambda<F, NArgs...> l, Arg arg)
-		-> typename result_type<typename PromoteToExpression<F>::type, Arg>::type
+		-> Lambda<F, NArgs...>
 	{
 		return l;
 	}
@@ -175,4 +206,10 @@ namespace pure
 				),
 			compute_call_args(e, arg), typename mpl::count<sizeof...(CallArgs)>::type());
 	}
+
+	BINARY_OPERATOR(-, SubExpression)
+	BINARY_OPERATOR(*, MulExpression)
+	BINARY_OPERATOR(/, DivExpression)
+	//BINARY_OPERATOR(<<, LShiftExpression)
+	//BINARY_OPERATOR(>>, RShiftExpression)
 }
