@@ -1,4 +1,5 @@
 #include <string>
+#include <typeinfo>
 #include <iostream>
 #include "pure.h"
 #include "testhelper.h"
@@ -12,11 +13,25 @@ TEST(Add)
 	assertEqual("abcdefghi", f(string("abc"), string("def")) + "ghi");
 }
 
-TEST(Call)
+TEST(SimpleCall)
 {
 	auto f = lambda(x, x);
+	auto f1 = lambda(x, x+1);
 	auto g = lambda(x, x(1));
-	g(f);
+	assertEqual(1,g(f));
+	assertEqual(2,g(f1));
+	assertEqual(1,f(g(f)));
+	assertEqual(2,g(f1));
+
+	auto h = lambda(x, y, x(y));
+	assertEqual(4,h(f, 4));
+	assertEqual(5,h(f1, 4));
+
+	assertEqual(2,h(g, f1));
+
+	auto k = lambda(x, y, x(y+4)+5);
+	assertEqual(10,k(f, 1));
+	assertEqual(11,k(f, 2));
 }
 	
 

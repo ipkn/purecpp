@@ -8,20 +8,21 @@ namespace pure
 {
 #ifndef PURE_NO_VARIADIC_TEMPLATE
 	template <typename Expr, int ...Args>
-	struct Lambda
+	struct Lambda : public Expression
 	{
-		typedef Expr expr_type;
+		typedef typename PromoteToExpression<Expr>::type expr_type;
 
 		Lambda(Expr e)
 		: e(e)
 		{
 		}
 
-		Expr e;
+		expr_type e;
 
 		template <typename ... CallArgs>
 		auto operator()(CallArgs... cargs) -> decltype(apply(e, cargs...))
 		{
+			static_assert(sizeof...(CallArgs) == sizeof...(Args), "Arguemnt count is wrong. (partial application is not implemented.)");
 			return apply(e, cargs...);
 		}
 	};

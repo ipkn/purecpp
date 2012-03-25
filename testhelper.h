@@ -74,6 +74,14 @@ void run()
 	cout << success << '/' << total << " tests passed." << endl;
 }
 
+#define DISABLED_TEST(x) \
+	struct S__##x : public TestCase \
+	{ \
+		S__##x() : TestCase(#x){} \
+		void DoTest(); \
+	} inst_S__##x; \
+	void S__##x::DoTest()
+
 #define TEST(x) \
 	struct S__##x : public TestCase \
 	{ \
