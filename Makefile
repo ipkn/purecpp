@@ -1,6 +1,6 @@
 SRCS = test.cpp
 OBJS = $(SRCS:.cpp=.o)
-CPP = g++-mp-4.6
+CPP = g++
 CPPFLAGS = -std=c++0x -g
 
 all: test

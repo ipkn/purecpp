@@ -33,6 +33,13 @@ namespace pure
 		AddExpression(L l, R r):l(l),r(r){}
 	};
 
+	template <typename F, typename ... CallArgs>
+	struct CallExpression : public Expression
+	{
+		F f;
+		std::tuple<CallArgs...> callArgs;
+		CallExpression(F f, CallArgs... _callArgs):f(f), callArgs(_callArgs...){}
+	};
 
 	template <typename T> 
 	struct PromoteToExpression
@@ -45,6 +52,16 @@ namespace pure
 	{
 		typedef VarExpression<N> type;
 	};
+
+	//template <typename Expr, int ...Args>
+	//struct Lambda;
+
+	//template <typename Expr, int ...Args>
+	//struct PromoteToExpression<Lambda<Expr, Args...>>
+	//{
+		//typedef Expr type;
+	//};
+
 
 #define PURE_PROMOTE(T) typename PromoteToExpression<T>::type
 	template <typename L, typename R>
@@ -82,6 +99,12 @@ namespace pure
 		typedef decltype(typename result_type<L, Args>::type()+typename result_type<R, Args>::type()) type;
 	};
 
+	template <typename Args, typename F, typename ... CallArgs>
+	struct result_type<CallExpression<F, CallArgs...>, Args>
+	{
+		typedef typename result_type<F, Args>::type type;
+	};
+
 	template <typename T, typename Arg>
 	T eval(ConstExpression<T> e, Arg arg)
 	{
@@ -99,5 +122,28 @@ namespace pure
 	typename std::tuple_element<N, Arg>::type eval(VarExpression<N> e, Arg arg)
 	{
 		return std::get<N>(arg);
+	}
+
+	template <typename F, typename Arg, typename ... CallArgs, int ... S>
+	std::tuple<typename result_type<CallArgs, Arg>::type...>
+	compute_call_args_helper(CallExpression<F, CallArgs...>ce, Arg arg, mpl::seq<S...>)
+	{
+		return std::tuple<typename result_type<CallArgs, Arg>::type...>(
+				eval(std::get<S>(ce.callArgs),arg)...
+			);
+	}
+	template <typename F, typename Arg, typename ... CallArgs>
+	std::tuple<typename result_type<CallArgs, Arg>::type...>
+	compute_call_args(CallExpression<F, CallArgs...>ce, Arg arg)
+	{
+		return compute_call_args_helper(ce, arg, typename mpl::count<sizeof...(CallArgs)>::type());
+		
+	}
+
+	template <typename F, typename Arg, typename ... CallArgs>
+	auto eval(CallExpression<F, CallArgs...> e, Arg arg)
+		-> typename result_type<typename PromoteToExpression<F>::type, std::tuple<CallArgs...>>::type 
+	{
+		return eval(e.f, compute_call_args(e, arg));
 	}
 }
