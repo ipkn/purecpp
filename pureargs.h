@@ -23,4 +23,5 @@ namespace pure
 
 	Arg<0> x;
 	Arg<1> y;
+	Arg<2> z;
 }

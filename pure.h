@@ -3,6 +3,8 @@
 //#define PURE_NO_VARIADIC_TEMPLATE
 #define PURE_USE_BOOST
 
+#include <tuple>
+#include <functional>
 #include "purempl.h"
 #include "pureargs.h"
 #include "pureexpr.h"

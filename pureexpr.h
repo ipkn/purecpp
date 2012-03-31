@@ -3,6 +3,7 @@
 #include <tuple>
 #include "pureargs.h"
 #include "purempl.h"
+#include "pureargmap.h"
 
 namespace pure
 {
@@ -96,7 +97,7 @@ namespace pure
 	template <typename Expr, int ...Args>
 	struct PromoteToExpression<Lambda<Expr, Args...>>
 	{
-		typedef Expr type;
+		typedef ConstExpression<Lambda<Expr, Args...>> type;
 	};
 
 
@@ -127,7 +128,7 @@ namespace pure
 	template <int N, typename Args>
 	struct result_type<VarExpression<N>, Args>
 	{
-		typedef typename std::tuple_element<N, Args>::type type;
+		typedef typename arg_type<N, Args>::type type;
 	};
 
 	template <typename L, typename R, typename Args>
@@ -136,12 +137,15 @@ namespace pure
 		typedef decltype(typename result_type<L, Args>::type()+typename result_type<R, Args>::type()) type;
 	};
 
-	template <typename Args, typename F, typename ... CallArgs>
-	struct result_type<CallExpression<F, CallArgs...>, Args>
+	template <typename F, typename ... CallArgs, typename AMSeq, typename ... AMTypes>
+	struct result_type<CallExpression<F, CallArgs...>, argmap<AMSeq, AMTypes...>>
 	{
+		typedef typename result_type<F, argmap<AMSeq, AMTypes...>>::type L;
 		typedef typename result_type<
-				typename result_type<F, Args>::type::expr_type,
-				std::tuple<typename result_type<CallArgs, Args>::type...>
+				typename L::expr_type,
+					argmap<
+						decltype(seq_cat(typename L::arg_bind_type(), AMSeq())),
+						typename result_type<CallArgs, argmap<AMSeq, AMTypes...>>::type..., AMTypes...>
 			>::type type;
 	};
 
@@ -159,9 +163,9 @@ namespace pure
 	}
 
 	template <int N, typename Arg>
-	typename std::tuple_element<N, Arg>::type eval(VarExpression<N> e, Arg arg)
+	typename arg_type<N, Arg>::type eval(VarExpression<N> e, Arg arg)
 	{
-		return std::get<N>(arg);
+		return arg_get<N>(arg);
 	}
 
 	template <typename F, typename Arg, typename ... CallArgs, int ... S>
@@ -180,18 +184,24 @@ namespace pure
 		
 	}
 
-	template <typename Arg, typename F, int ... NArgs, int ... S>
-	auto call_helper(Lambda<F, NArgs...> l, Arg arg, mpl::seq<S...>)
-		-> typename result_type<typename PromoteToExpression<F>::type, Arg>::type
+	template <typename OrigianlArg, typename Arg, typename F, int ... NArgs, int ... S>
+	auto call_helper(Lambda<F, NArgs...> l, Arg arg, OrigianlArg oarg, mpl::seq<S...>)
+		-> typename result_type<typename PromoteToExpression<F>::type, 
+			decltype(make_argmap(arg, mpl::seq<NArgs...>()))
+		>::type
 	{
-		return l(std::get<S>(arg)...);
+		return eval(l.e, argmap_cat(
+			make_argmap(arg, mpl::seq<NArgs...>()),
+			oarg	
+			));
+		//return l(std::get<S>(arg)...);
 	}
 
 	template <typename Arg, typename F, int ... NArgs>
 	auto eval(Lambda<F, NArgs...> l, Arg arg)
 		-> Lambda<F, NArgs...>
 	{
-		return l;
+		return l.with(arg);
 	}
 
 	template <typename F, typename Arg, typename ... CallArgs>
@@ -204,7 +214,7 @@ namespace pure
 					typename PromoteToExpression<F>::type(e.f), 
 					arg
 				),
-			compute_call_args(e, arg), typename mpl::count<sizeof...(CallArgs)>::type());
+			compute_call_args(e, arg), arg, typename mpl::count<sizeof...(CallArgs)>::type());
 	}
 
 	BINARY_OPERATOR(-, SubExpression)

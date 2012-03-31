@@ -6,6 +6,29 @@
 using namespace std;
 using namespace pure;
 
+TEST(LambdaArgumentChange)
+{
+	auto f = lambda(y, y);
+	assertEqual(1, f(1));
+	assertEqual(2, f(2));
+	assertEqual(string("abc"), f("abc"));
+	auto g = lambda(lambda(x,x));
+	auto h = g();
+	assertEqual(1, h(1));
+}
+
+TEST(LispLikeList)
+{
+	auto cons = lambda(x, y, lambda(z, z(x,y)));
+	auto car = lambda(x, x(lambda(x, y, x)));
+	auto cdr = lambda(x, x(lambda(x, y, y)));
+	auto nil = 0;
+	auto list = cons(1, cons(2, cons(3, nil)));
+	//assertEqual(1, car(list));
+	//assertEqual(2, car(cdr(list)));
+	//assertEqual(3, car(cdr(cdr(list))));
+}
+
 TEST(BinaryOp)
 {
 	auto f = lambda(x, y, x+y);
