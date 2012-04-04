@@ -3,7 +3,9 @@
 
 #ifdef PURE_USE_BOOST
 #include <boost/mpl/if.hpp>
+#include <boost/mpl/bool.hpp>
 #include <boost/mpl/int.hpp>
+#include <boost/mpl/map.hpp>
 namespace pure
 {
 	namespace mpl
@@ -62,6 +64,61 @@ namespace pure
 		struct find_seq<N, seq<S...>>
 		{
 			static const int value = find<N, 0, S...>::value;
+		};
+
+		template <int N, typename T>
+		struct seq_contains;
+
+		template <int N>
+		struct seq_contains<N, seq<>>
+		{
+			static const bool value = false;
+		};
+
+		template <int N, int F, int ... S>
+		struct seq_contains<N, seq<F, S...>>
+		{
+			static const bool value = if_c<N==F, bool_<true>,seq_contains<N,seq<S...>>>::type::value;
+		};
+
+		template <int N, typename T>
+		struct seq_insert_one;
+		template <int N, int ...S>
+		struct seq_insert_one<N, seq<S...>>
+		{
+			typedef seq<N, S...> type;
+		};
+
+		template <int N, typename T>
+		struct seq_remove_one;
+
+		template <int N>
+		struct seq_remove_one<N, seq<>>
+		{
+			typedef seq<> type;
+		};
+
+		template <int N, int F, int ... S>
+		struct seq_remove_one<N, seq<F, S...>>
+		{
+			typedef typename if_c<N==F,
+				seq<S...>,
+				typename seq_insert_one<F, typename seq_remove_one<N, seq<S...>>::type>::type>::type type;
+		};
+
+		template <typename A, typename B>
+		struct seq_diff;
+
+		template <typename A>
+		struct seq_diff<A, seq<>>
+		{
+			typedef A type;
+		};
+
+		template <typename A, int N, int ... D>
+		struct seq_diff<A, seq<N, D...>>
+		{
+			typedef typename seq_diff<seq_remove_one<N, A>, seq<D...>>::type type;
 		};
 	}
 }

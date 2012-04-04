@@ -6,6 +6,35 @@
 using namespace std;
 using namespace pure;
 
+TEST(Internal)
+{
+	typedef mpl::seq<1,2,3> seq_type;
+	assert(mpl::seq_contains<1, seq_type>::value, "Contains");
+	assert(!mpl::seq_contains<4, seq_type>::value, "Not contains");
+	VarExpression<2> v1((Arg<2>()));
+	VarExpression<4> v2((Arg<4>()));
+	argmap<seq_type, int, int, int> arg(std::tuple<int,int,int>(10,11,12),seq_type());
+	auto x1 = bind(v1,arg);
+	auto x2 = bind(v2,arg);
+	assertEqual(11, x1.t);
+	assertEqual(typeid(x2).name(), typeid(v2).name());
+	Arg<10> a;
+	auto addx = a+y;
+	auto binded = bind(addx,arg);
+	assertEqual(21, eval(binded, make_argmap(std::tuple<int>(11), mpl::seq<10>())));
+	auto l = lambda(a, a+y);
+	// l(11) - compiler error
+	auto l2 = bind(l, arg);
+	assertEqual(21, l2(11));
+}
+
+TEST(Closure)
+{
+	auto f = lambda(x, lambda(x, x));
+	auto g = f(1);
+	assertEqual(2, g(2));
+}
+
 TEST(LambdaArgumentChange)
 {
 	auto f = lambda(y, y);
@@ -23,7 +52,7 @@ TEST(LispLikeList)
 	auto car = lambda(x, x(lambda(x, y, x)));
 	auto cdr = lambda(x, x(lambda(x, y, y)));
 	auto nil = 0;
-	auto list = cons(1, cons(2, cons(3, nil)));
+	//auto list = cons(1, cons(2, cons(3, nil)));
 	//assertEqual(1, car(list));
 	//assertEqual(2, car(cdr(list)));
 	//assertEqual(3, car(cdr(cdr(list))));

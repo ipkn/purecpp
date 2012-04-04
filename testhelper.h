@@ -20,7 +20,7 @@ struct TestCase
 	}
 
 	template <typename T1, typename T2>
-	void assertEqual(T1 expected, T2 actual)
+	void assertEqual(const T1& expected, const T2& actual)
 	{
 		if (expected != actual)
 		{

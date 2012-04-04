@@ -28,14 +28,14 @@ namespace pure
 			static_assert(sizeof...(CallArgs) == sizeof...(Args), "Argument count is wrong. (partial application is not implemented.)");
 			return eval(e, make_argmap(std::tuple<CallArgs...>(cargs...), mpl::seq<Args...>()));
 		}
-
-		//template <typename ... CallArgs>
-		//auto operator()(CallArgs... cargs) -> decltype(apply(e, cargs...))
-		//{
-			//static_assert(sizeof...(CallArgs) == sizeof...(Args), "Argument count is wrong. (partial application is not implemented.)");
-			//return apply(e, cargs...);
-		//}
 	};
+
+	template <typename Expr, int ... Args, int ... NArgs, typename ... CallArgs>
+	auto bind(Lambda<Expr, Args...> l, argmap<mpl::seq<NArgs...>, CallArgs...> arg)
+		-> Lambda<decltype(bind(l.e,argmap_remove(arg, mpl::seq<Args...>()))), Args...>
+	{
+		return Lambda<decltype(bind(l.e,argmap_remove(arg, mpl::seq<Args...>()))), Args...>(bind(l.e,argmap_remove(arg, mpl::seq<Args...>())));
+	}
 
 	template <typename Expr>
 	Lambda<Expr> lambda(Expr e)

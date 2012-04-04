@@ -49,4 +49,19 @@ namespace pure
 					mpl::seq_cat(am1.seq, am2.seq)
 				);
 		}
+
+	template <typename Seq1, typename Seq2, typename ... Types1>
+	auto argmap_select(argmap<Seq1, Types1...> am, Seq2)
+		-> decltype(am)
+	{
+		// TODO
+		return am;
+	}
+
+	template <typename Seq1, typename Seq2, typename ... Types1>
+	auto argmap_remove(argmap<Seq1, Types1...> am, Seq2 s)
+		-> decltype(argmap_select(am, s, typename mpl::seq_diff<Seq1, Seq2>::type()))
+	{
+		return argmap_select(am, s, typename mpl::seq_diff<Seq1, Seq2>::type());
+	}
 }

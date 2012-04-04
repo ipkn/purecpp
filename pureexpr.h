@@ -17,6 +17,39 @@ namespace pure
 		//typedef void type;
 	};
 
+	template <typename T>
+	struct ConstExpression : public Expression
+	{
+		typedef T type;
+		T t;
+		ConstExpression(T t) : t(t) {}
+
+	};
+	template <typename T, int ... NArgs, typename ... CallArgs>
+	ConstExpression<T> bind(ConstExpression<T> e, const argmap<mpl::seq<NArgs...>, CallArgs...>&)
+	{
+		return e;
+	}
+
+	template <int N>
+	struct VarExpression;
+
+	namespace detail
+	{
+		template <int N, int ... NArgs, typename ... CallArgs>
+		auto var_bind(argmap<mpl::seq<NArgs...>, CallArgs...> arg, mpl::bool_<true>)
+		-> ConstExpression<typename arg_type<N, decltype(arg)>::type>
+		{
+			return ConstExpression<typename arg_type<N, decltype(arg)>::type>(arg_get<N>(arg));
+		}
+
+		template <int N, int ... NArgs, typename ... CallArgs>
+		auto var_bind(argmap<mpl::seq<NArgs...>, CallArgs...> arg, mpl::bool_<false>)
+		-> VarExpression<N>
+		{
+			return VarExpression<N>(Arg<N>());
+		}
+	}
 
 	template <int N>
 	struct VarExpression : public Expression
@@ -25,13 +58,12 @@ namespace pure
 		VarExpression(Arg<N>){}
 	};
 
-	template <typename T>
-	struct ConstExpression : public Expression
+	template <int N, int ... NArgs, typename ... CallArgs>
+	auto bind(VarExpression<N>, argmap<mpl::seq<NArgs...>, CallArgs...> arg)
+	-> decltype(detail::var_bind<N>(arg, mpl::bool_<mpl::seq_contains<N,mpl::seq<NArgs...>>::value>()))
 	{
-		typedef T type;
-		T t;
-		ConstExpression(T t) : t(t) {}
-	};
+		return detail::var_bind<N>(arg, mpl::bool_<mpl::seq_contains<N,mpl::seq<NArgs...>>::value>());
+	}
 
 #define BINARY_OPERATOR(op, className) \
 	template <typename L, typename R>\
@@ -40,7 +72,14 @@ namespace pure
 		L l;\
 		R r;\
 		className(L l, R r):l(l),r(r){}\
+		\
 	};\
+	template <typename L, typename R, int ... NArgs, typename ... CallArgs>		\
+	auto bind(className<L,R> e, argmap<mpl::seq<NArgs...>, CallArgs...> arg)		\
+	-> className<decltype(bind(e.l,arg)), decltype(bind(e.r,arg))>\
+	{		\
+		return className<decltype(bind(e.l,arg)), decltype(bind(e.r,arg))>(bind(e.l,arg), bind(e.r,arg)); \
+	}		\
 	template <typename L, typename R>\
 	className<\
 	PURE_PROMOTE(L),\
@@ -63,13 +102,13 @@ namespace pure
 		return eval(e.l, arg) op eval(e.r, arg);\
 	}
 
-	template <typename L, typename R>
-	struct AddExpression : public Expression
-	{
-		L l;
-		R r;
-		AddExpression(L l, R r):l(l),r(r){}
-	};
+	//template <typename L, typename R>
+	//struct AddExpression : public Expression
+	//{
+		//L l;
+		//R r;
+		//AddExpression(L l, R r):l(l),r(r){}
+	//};
 
 	template <typename F, typename ... CallArgs>
 	struct CallExpression : public Expression
@@ -77,8 +116,31 @@ namespace pure
 		F f;
 		std::tuple<CallArgs...> callArgs;
 		CallExpression(F f, CallArgs... _callArgs):f(f), callArgs(_callArgs...){}
-	};
 
+	};
+	namespace detail 
+	{
+		template <typename F, typename ... CallArgs, int ... NArgs, typename ... Args, int ... S>
+		auto calle_bind_helper(CallExpression<F, CallArgs...> e, const argmap<mpl::seq<NArgs...>, Args...>& arg, mpl::seq<S...>)
+		-> CallExpression<
+				decltype(bind(e.f,arg)),	
+				decltype(bind(std::get<S>(e.callArgs),arg))...
+			>
+		{
+			return CallExpression<
+					decltype(bind(e.f,arg)),	
+					decltype(bind(std::get<S>(e.callArgs),arg))...
+				>
+				(bind(e.f,arg), bind(std::get<S>(e.callArgs),arg)...);
+		}
+	}
+
+	template <typename F, typename ... CallArgs, int ... NArgs, typename ... Args>
+	auto bind(CallExpression<F, CallArgs...> e, const argmap<mpl::seq<NArgs...>, Args...>& arg)
+		-> decltype(detail::calle_bind_helper(e, arg, typename mpl::count<sizeof...(CallArgs)>::type()))
+	{
+		return detail::calle_bind_helper(e, arg, typename mpl::count<sizeof...(CallArgs)>::type());
+	}
 	template <typename T> 
 	struct PromoteToExpression
 	{
@@ -97,21 +159,22 @@ namespace pure
 	template <typename Expr, int ...Args>
 	struct PromoteToExpression<Lambda<Expr, Args...>>
 	{
-		typedef ConstExpression<Lambda<Expr, Args...>> type;
+		//typedef ConstExpression<Lambda<Expr, Args...>> type;
+		typedef Lambda<Expr, Args...> type;
 	};
 
 
 #define PURE_PROMOTE(T) typename PromoteToExpression<T>::type
-	template <typename L, typename R>
-	AddExpression<
-	PURE_PROMOTE(L),
-	PURE_PROMOTE(R)
-	> operator +(L l, R r)
-	{
-		typedef PURE_PROMOTE(L) LE;
-		typedef PURE_PROMOTE(R) RE;
-		return AddExpression<LE, RE>(LE(l), RE(r));
-	}
+	//template <typename L, typename R>
+	//AddExpression<
+	//PURE_PROMOTE(L),
+	//PURE_PROMOTE(R)
+	//> operator +(L l, R r)
+	//{
+		//typedef PURE_PROMOTE(L) LE;
+		//typedef PURE_PROMOTE(R) RE;
+		//return AddExpression<LE, RE>(LE(l), RE(r));
+	//}
 
 	template <typename Expr, typename Args, int... NArgs>
 	struct result_type<Lambda<Expr, NArgs...>, Args>
@@ -131,11 +194,11 @@ namespace pure
 		typedef typename arg_type<N, Args>::type type;
 	};
 
-	template <typename L, typename R, typename Args>
-	struct result_type<AddExpression<L, R>, Args>
-	{
-		typedef decltype(typename result_type<L, Args>::type()+typename result_type<R, Args>::type()) type;
-	};
+	//template <typename L, typename R, typename Args>
+	//struct result_type<AddExpression<L, R>, Args>
+	//{
+		//typedef decltype(typename result_type<L, Args>::type()+typename result_type<R, Args>::type()) type;
+	//};
 
 	template <typename F, typename ... CallArgs, typename AMSeq, typename ... AMTypes>
 	struct result_type<CallExpression<F, CallArgs...>, argmap<AMSeq, AMTypes...>>
@@ -155,12 +218,12 @@ namespace pure
 		return e.t;
 	}
 
-	template <typename L, typename R, typename Arg>
-	auto eval(AddExpression<L, R> e, Arg arg)
-		-> decltype(eval(e.l, arg) + eval(e.r, arg))
-	{
-		return eval(e.l, arg) + eval(e.r, arg);
-	}
+	//template <typename L, typename R, typename Arg>
+	//auto eval(AddExpression<L, R> e, Arg arg)
+		//-> decltype(eval(e.l, arg) + eval(e.r, arg))
+	//{
+		//return eval(e.l, arg) + eval(e.r, arg);
+	//}
 
 	template <int N, typename Arg>
 	typename arg_type<N, Arg>::type eval(VarExpression<N> e, Arg arg)
@@ -199,9 +262,9 @@ namespace pure
 
 	template <typename Arg, typename F, int ... NArgs>
 	auto eval(Lambda<F, NArgs...> l, Arg arg)
-		-> Lambda<F, NArgs...>
+		-> decltype(bind(l, arg))
 	{
-		return l.with(arg);
+		return bind(l, arg);
 	}
 
 	template <typename F, typename Arg, typename ... CallArgs>
@@ -217,6 +280,7 @@ namespace pure
 			compute_call_args(e, arg), arg, typename mpl::count<sizeof...(CallArgs)>::type());
 	}
 
+	BINARY_OPERATOR(+, AddExpression)
 	BINARY_OPERATOR(-, SubExpression)
 	BINARY_OPERATOR(*, MulExpression)
 	BINARY_OPERATOR(/, DivExpression)
