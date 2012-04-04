@@ -118,7 +118,13 @@ namespace pure
 		template <typename A, int N, int ... D>
 		struct seq_diff<A, seq<N, D...>>
 		{
-			typedef typename seq_diff<seq_remove_one<N, A>, seq<D...>>::type type;
+			typedef typename seq_diff<typename seq_remove_one<N, A>::type, seq<D...>>::type type;
+		};
+
+		template <typename A, typename B>
+		struct seq_and
+		{
+			typedef typename seq_diff<A, typename seq_diff<A,B>::type>::type type;
 		};
 	}
 }

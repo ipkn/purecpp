@@ -50,18 +50,34 @@ namespace pure
 				);
 		}
 
+	template <typename Seq1, int ... S, typename ... Types1>
+	auto argmap_select_helper(argmap<Seq1, Types1...> am, mpl::seq<S...>)
+		->decltype(make_argmap(
+			std::tuple<typename arg_type<S, decltype(am)>::type...>(
+				arg_get<S>(am)...
+				),
+			mpl::seq<S...>()
+			))
+	{
+		return make_argmap(
+			std::tuple<typename arg_type<S, decltype(am)>::type...>(
+				arg_get<S>(am)...
+				),
+			mpl::seq<S...>()
+			);
+	}
+
 	template <typename Seq1, typename Seq2, typename ... Types1>
 	auto argmap_select(argmap<Seq1, Types1...> am, Seq2)
-		-> decltype(am)
+		-> decltype(argmap_select_helper(am, typename mpl::seq_and<Seq1, Seq2>::type()))
 	{
-		// TODO
-		return am;
+		return argmap_select_helper(am, typename mpl::seq_and<Seq1, Seq2>::type());
 	}
 
 	template <typename Seq1, typename Seq2, typename ... Types1>
 	auto argmap_remove(argmap<Seq1, Types1...> am, Seq2 s)
-		-> decltype(argmap_select(am, s, typename mpl::seq_diff<Seq1, Seq2>::type()))
+		-> decltype(argmap_select(am, typename mpl::seq_diff<Seq1, Seq2>::type()))
 	{
-		return argmap_select(am, s, typename mpl::seq_diff<Seq1, Seq2>::type());
+		return argmap_select(am, typename mpl::seq_diff<Seq1, Seq2>::type());
 	}
 }

@@ -1,13 +1,18 @@
-pure.o: pure.h purempl.h pureargs.h pureexpr.h purelambda.h pureapply.h
+pure.o: pure.h purempl.h pureargs.h pureexpr.h pureargmap.h purelambda.h \
+ pureapply.h
 pureapply.o: pureapply.h pureexpr.h pureargs.h purempl.h pure.h \
- purelambda.h
+ purelambda.h pureargmap.h
+pureargmap.o: pureargmap.h purempl.h pure.h pureargs.h pureexpr.h \
+ purelambda.h pureapply.h
 pureargs.o: pureargs.h
+puredebug.o: puredebug.h
 pureexpr.o: pureexpr.h pureargs.h purempl.h pure.h purelambda.h \
- pureapply.h
+ pureapply.h pureargmap.h
 purelambda.o: purelambda.h pureargs.h pureexpr.h purempl.h pure.h \
- pureapply.h
-purempl.o: purempl.h pure.h pureargs.h pureexpr.h purelambda.h \
- pureapply.h
+ pureapply.h pureargmap.h
+purempl.o: purempl.h pure.h pureargs.h pureexpr.h pureargmap.h \
+ purelambda.h pureapply.h
 testhelper.o: testhelper.h
-test.o: test.cpp pure.h purempl.h pureargs.h pureexpr.h purelambda.h \
- pureapply.h testhelper.h
+a.o: a.cpp
+test.o: test.cpp testhelper.h pure.h purempl.h pureargs.h pureexpr.h \
+ pureargmap.h purelambda.h pureapply.h

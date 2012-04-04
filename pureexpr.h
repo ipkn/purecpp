@@ -26,7 +26,7 @@ namespace pure
 
 	};
 	template <typename T, int ... NArgs, typename ... CallArgs>
-	ConstExpression<T> bind(ConstExpression<T> e, const argmap<mpl::seq<NArgs...>, CallArgs...>&)
+	ConstExpression<T> arg_bind(ConstExpression<T> e, const argmap<mpl::seq<NArgs...>, CallArgs...>&)
 	{
 		return e;
 	}
@@ -59,7 +59,7 @@ namespace pure
 	};
 
 	template <int N, int ... NArgs, typename ... CallArgs>
-	auto bind(VarExpression<N>, argmap<mpl::seq<NArgs...>, CallArgs...> arg)
+	auto arg_bind(VarExpression<N>, argmap<mpl::seq<NArgs...>, CallArgs...> arg)
 	-> decltype(detail::var_bind<N>(arg, mpl::bool_<mpl::seq_contains<N,mpl::seq<NArgs...>>::value>()))
 	{
 		return detail::var_bind<N>(arg, mpl::bool_<mpl::seq_contains<N,mpl::seq<NArgs...>>::value>());
@@ -75,10 +75,10 @@ namespace pure
 		\
 	};\
 	template <typename L, typename R, int ... NArgs, typename ... CallArgs>		\
-	auto bind(className<L,R> e, argmap<mpl::seq<NArgs...>, CallArgs...> arg)		\
-	-> className<decltype(bind(e.l,arg)), decltype(bind(e.r,arg))>\
+	auto arg_bind(className<L,R> e, argmap<mpl::seq<NArgs...>, CallArgs...> arg)		\
+	-> className<decltype(arg_bind(e.l,arg)), decltype(arg_bind(e.r,arg))>\
 	{		\
-		return className<decltype(bind(e.l,arg)), decltype(bind(e.r,arg))>(bind(e.l,arg), bind(e.r,arg)); \
+		return className<decltype(arg_bind(e.l,arg)), decltype(arg_bind(e.r,arg))>(arg_bind(e.l,arg), arg_bind(e.r,arg)); \
 	}		\
 	template <typename L, typename R>\
 	className<\
@@ -123,20 +123,20 @@ namespace pure
 		template <typename F, typename ... CallArgs, int ... NArgs, typename ... Args, int ... S>
 		auto calle_bind_helper(CallExpression<F, CallArgs...> e, const argmap<mpl::seq<NArgs...>, Args...>& arg, mpl::seq<S...>)
 		-> CallExpression<
-				decltype(bind(e.f,arg)),	
-				decltype(bind(std::get<S>(e.callArgs),arg))...
+				decltype(arg_bind(e.f,arg)),	
+				decltype(arg_bind(std::get<S>(e.callArgs),arg))...
 			>
 		{
 			return CallExpression<
-					decltype(bind(e.f,arg)),	
-					decltype(bind(std::get<S>(e.callArgs),arg))...
+					decltype(arg_bind(e.f,arg)),	
+					decltype(arg_bind(std::get<S>(e.callArgs),arg))...
 				>
-				(bind(e.f,arg), bind(std::get<S>(e.callArgs),arg)...);
+				(arg_bind(e.f,arg), arg_bind(std::get<S>(e.callArgs),arg)...);
 		}
 	}
 
 	template <typename F, typename ... CallArgs, int ... NArgs, typename ... Args>
-	auto bind(CallExpression<F, CallArgs...> e, const argmap<mpl::seq<NArgs...>, Args...>& arg)
+	auto arg_bind(CallExpression<F, CallArgs...> e, const argmap<mpl::seq<NArgs...>, Args...>& arg)
 		-> decltype(detail::calle_bind_helper(e, arg, typename mpl::count<sizeof...(CallArgs)>::type()))
 	{
 		return detail::calle_bind_helper(e, arg, typename mpl::count<sizeof...(CallArgs)>::type());
@@ -262,9 +262,9 @@ namespace pure
 
 	template <typename Arg, typename F, int ... NArgs>
 	auto eval(Lambda<F, NArgs...> l, Arg arg)
-		-> decltype(bind(l, arg))
+		-> decltype(arg_bind(l, arg))
 	{
-		return bind(l, arg);
+		return arg_bind(l, arg);
 	}
 
 	template <typename F, typename Arg, typename ... CallArgs>

@@ -6,6 +6,29 @@
 using namespace std;
 using namespace pure;
 
+TEST(LispLikeList)
+{
+	auto cons = lambda(x, y, lambda(z, z(x,y)));
+	auto car = lambda(x, x(lambda(x, y, x)));
+	auto cdr = lambda(x, x(lambda(x, y, y)));
+	auto nil = 0;
+
+	{
+		auto list = cons(1, 2);
+		auto h = lambda(x,y,x);
+		assertEqual(1,list(h));
+		assertEqual(2,list(lambda(x,y,y)));
+		assertEqual(1, car(list));
+		assertEqual(2, cdr(list));
+	}
+	{
+		auto list = cons(1, cons(2, cons(3, nil)));
+		assertEqual(1, car(list));
+		assertEqual(2, car(cdr(list)));
+		assertEqual(3, car(cdr(cdr(list))));
+	}
+}
+
 TEST(Internal)
 {
 	typedef mpl::seq<1,2,3> seq_type;
@@ -14,25 +37,39 @@ TEST(Internal)
 	VarExpression<2> v1((Arg<2>()));
 	VarExpression<4> v2((Arg<4>()));
 	argmap<seq_type, int, int, int> arg(std::tuple<int,int,int>(10,11,12),seq_type());
-	auto x1 = bind(v1,arg);
-	auto x2 = bind(v2,arg);
+	auto x1 = arg_bind(v1,arg);
+	auto x2 = arg_bind(v2,arg);
 	assertEqual(11, x1.t);
 	assertEqual(typeid(x2).name(), typeid(v2).name());
 	Arg<10> a;
 	auto addx = a+y;
-	auto binded = bind(addx,arg);
+	auto binded = arg_bind(addx,arg);
 	assertEqual(21, eval(binded, make_argmap(std::tuple<int>(11), mpl::seq<10>())));
 	auto l = lambda(a, a+y);
+
+	argmap_select(arg, mpl::seq<10>());
+	mpl::seq_diff<seq_type,mpl::seq<10>>::type t;
+	argmap_remove(arg, mpl::seq<10>());
 	// l(11) - compiler error
-	auto l2 = bind(l, arg);
+	auto l2 = arg_bind(l, arg);
 	assertEqual(21, l2(11));
 }
 
 TEST(Closure)
 {
-	auto f = lambda(x, lambda(x, x));
-	auto g = f(1);
-	assertEqual(2, g(2));
+	{
+		auto f = lambda(x, lambda(x, x));
+		auto g = f(1);
+		assertEqual(2, g(2));
+	}
+
+	{
+		auto f = lambda(x, lambda(y, x+y));
+		auto g = f(5);
+		assertEqual(10, g(5));
+		auto h = f(string("abc"));
+		assertEqual("abcdef", h("def"));
+	}
 }
 
 TEST(LambdaArgumentChange)
@@ -44,18 +81,6 @@ TEST(LambdaArgumentChange)
 	auto g = lambda(lambda(x,x));
 	auto h = g();
 	assertEqual(1, h(1));
-}
-
-TEST(LispLikeList)
-{
-	auto cons = lambda(x, y, lambda(z, z(x,y)));
-	auto car = lambda(x, x(lambda(x, y, x)));
-	auto cdr = lambda(x, x(lambda(x, y, y)));
-	auto nil = 0;
-	//auto list = cons(1, cons(2, cons(3, nil)));
-	//assertEqual(1, car(list));
-	//assertEqual(2, car(cdr(list)));
-	//assertEqual(3, car(cdr(cdr(list))));
 }
 
 TEST(BinaryOp)

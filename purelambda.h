@@ -31,33 +31,33 @@ namespace pure
 	};
 
 	template <typename Expr, int ... Args, int ... NArgs, typename ... CallArgs>
-	auto bind(Lambda<Expr, Args...> l, argmap<mpl::seq<NArgs...>, CallArgs...> arg)
-		-> Lambda<decltype(bind(l.e,argmap_remove(arg, mpl::seq<Args...>()))), Args...>
+	auto arg_bind(Lambda<Expr, Args...> l, argmap<mpl::seq<NArgs...>, CallArgs...> arg)
+		-> Lambda<decltype(arg_bind(l.e,argmap_remove(arg, mpl::seq<Args...>()))), Args...>
 	{
-		return Lambda<decltype(bind(l.e,argmap_remove(arg, mpl::seq<Args...>()))), Args...>(bind(l.e,argmap_remove(arg, mpl::seq<Args...>())));
+		return Lambda<decltype(arg_bind(l.e,argmap_remove(arg, mpl::seq<Args...>()))), Args...>(arg_bind(l.e,argmap_remove(arg, mpl::seq<Args...>())));
 	}
 
 	template <typename Expr>
-	Lambda<Expr> lambda(Expr e)
+	Lambda<PURE_PROMOTE(Expr)> lambda(Expr e)
 	{
-		return Lambda<Expr>(e);
+		return Lambda<PURE_PROMOTE(Expr)>(e);
 	}
 
 	template <int N, typename Expr>
-	Lambda<Expr,N> lambda(Arg<N>, Expr e)
+	Lambda<PURE_PROMOTE(Expr),N> lambda(Arg<N>, Expr e)
 	{
-		return Lambda<Expr,N>(e);
+		return Lambda<PURE_PROMOTE(Expr),N>(e);
 	}
 
 	template <int N, int M, typename Expr>
-	Lambda<Expr,N,M> lambda(Arg<N>, Arg<M>, Expr e)
+	Lambda<PURE_PROMOTE(Expr),N,M> lambda(Arg<N>, Arg<M>, Expr e)
 	{
-		return Lambda<Expr,N,M>(e);
+		return Lambda<PURE_PROMOTE(Expr),N,M>(e);
 	}
 
 	template <int N1, int N2, int N3, typename Expr>
-	Lambda<Expr,N1,N2,N3> lambda(Arg<N1>, Arg<N2>, Arg<N3>, Expr e)
+	Lambda<PURE_PROMOTE(Expr),N1,N2,N3> lambda(Arg<N1>, Arg<N2>, Arg<N3>, Expr e)
 	{
-		return Lambda<Expr,N1,N2,N3>(e);
+		return Lambda<PURE_PROMOTE(Expr),N1,N2,N3>(e);
 	}
 }
